@@ -15,7 +15,7 @@ The present architecture combines elements of a widely used A2C actor-critic arc
 - a final capsule layer with as many capsules as discrete actions, producing a policy. 
 A schematic of the architecture is shown below:
 
-<img src="https://github.com/AI-RG/modular/blob/master/assets/testacc.png" alt="test" width="600px"/>
+<img src="https://github.com/AI-RG/baselines/blob/master/baselines/a2c2/capsule-policy.png" alt="caps-policy" width="800px"/>
 
 
 ## Experiments
