@@ -1,12 +1,12 @@
 # A2C2: A2C + criticality
 
-This repository investigates the potential of Self-Organized Criticality (SOC) as a method to speed learning, in particular in a reinforcement learning context. Criticality is an intriguing property of dynamical systems. When a system is arranged so that its dynamics are poised on the threshold of chaos yet not chaotic, it is said to be *critical*. Particularly within the neuroscience community, there has been much interest in the role of criticality in information processing. Some research seeks to construct toy models that inch towards biological realism, and other research seeks to experimentally capture clear signals of criticality in actual brains. Meanwhile, other research seeks to better understand what benefits may be conferred by criticalty, and has concluded that there are likely many, including
+This repository investigates the potential of Self-Organized Criticality (SOC) as a method to speed learning, in particular in a reinforcement learning context. Criticality is an intriguing property of dynamical systems. When a system is arranged so that its dynamics are poised on the threshold of chaos yet not chaotic, it is said to be *critical*. Particularly within the neuroscience community, there has been much interest in the role of criticality in information processing. Some research seeks to construct toy models that inch towards biological realism [3, 4], and other research seeks to experimentally capture clear signals of criticality in actual brains [5, 6, 9]. Meanwhile, other research seeks to better understand what benefits may be conferred by criticalty [2], and has concluded that there are likely many, including
 
 - maximal dynamic range (sensitivity to the largest range of magnitudes of stimuli), 
 - maximal information storage, and
 - robustness to perturbations.
 
-Criticality seems to balance the benefits of remembing the past with the advantages of continually learning new information. The upshot is that criticality appears adaptive and moreover actually present in neural systems. However, most dynamical systems require fine-tuning to stay at criticality, and it is not obvious how a system as complex and noisy as a brain could coordinate to maintain this finely tuned state of affairs. For this reason, there is growing interest in the possibility that neural systems have dynamical evolution that pushes them back towards criticality as they stray farther from it. Such phenomena are referred to as Self-Organized Criticality (SOC).
+Criticality seems to balance the benefits of remembing the past with the advantages of continually learning new information. The upshot is that criticality appears adaptive and moreover actually present in neural systems. However, most dynamical systems require fine-tuning to stay at criticality, and it is not obvious how a system as complex and noisy as a brain could coordinate to maintain this finely tuned state of affairs. For this reason, there is growing interest in the possibility that neural systems have dynamical evolution that pushes them back towards criticality as they stray farther from it [7, 8, 9]. Such phenomena are referred to as Self-Organized Criticality (SOC).
 
 In these experiments, self-orgnanized criticality is implemented practically by the addition of a differntiable loss term:
 
@@ -26,11 +26,15 @@ This penalty is inspired by [1], which studied a toy model of self-organized cri
   
 Our procedure implements the same concept in a differentiable way. Moreover, we also experiment with penalizing the component-wise time-variance of the hidden state, given that unlike in [1], a hidden state activation may also be frozen at e.g. 1/2, since our activations are continuous-valued instead of Boolean.
 
+NB: It is simplest to implement SOC in this way if the state is already normalized in the range [0, 1] or [-1, 1]. Most recurrent networks do incorporate such normalization. On the other hand, if the state is not normalized, one could first pass it through a sigmoid or tanh before applying the regularization function detailed above.
+
 ## Experiments
 
-We perform experiments on the `BreakOut` Atari environment of OpenAI's gym.
+We perform experiments on the `BreakOut` Atari environment of OpenAI's gym, which are ongoing.
 
 We also perform experiments with this SOC regularization on an LSTM language model. Specifically, we see whether the SOC penalty can help an LSTM learn the Penn Tree Bank corpus more rapidly.
+
+<img src="https://github.com/AI-RG/baselines/blob/master/baselines/a2c2/criticality/assets/ptb-small-training.png" width="400px"/>
 
 ## Details
 
@@ -48,8 +52,8 @@ The command `python3 -m baselines.a2c2.run_atari --mode=soc` runs the algorithm 
 6.  C. Meisel, et al. "Fading signatures of critical brain dynamics during sustained wakefulness in humans." J. Neurosci. 33 (2013)
 7.  J. O'Brien, "A fundamental theory to model the mind." Quanta (2014).
 8.  J. Hesse and T. Gross. "Self-organized criticality as a fundamental property of neural systems." Front. Syst. Neorosci. (23 Sep 2014)
-9.  S. Johnson, J. Marro, and J. Torres. "Robust short-term memory without synaptic learning." PlosOne (2012) [NB: This S. Johnson is not me (!). I like his style, though.]
-10.  P. Moretti and M. Munoz. "Griffiths phases and the stretching of criticality in brain networks" Nature Communications 4 (2013).
+9.  P. Moretti and M. Munoz. "Griffiths phases and the stretching of criticality in brain networks" Nature Communications 4 (2013).
+10.  S. Johnson, J. Marro, and J. Torres. "Robust short-term memory without synaptic learning." PlosOne (2012) [NB: This S. Johnson is not me (!). I like his style, though.]
 
 ## A2C original
 
