@@ -1,6 +1,6 @@
 # A2C2: A2C + criticality
 
-This repository investigates the potential of Self-Organized Criticality (SOC) as a method to speed learning, in particular in a reinforcement learning context. Criticality, broadly speaking, is a property of dynamical systems. When a system is arranged that that so that its dynamics are poised on the threshold of chaos yet not chaotic, it is said to be *critical*. Particularly within the neuroscience community, there has been much interest in the role of criticality in information processing. Some research seeks to construct toy models that inch towards biological realism, and other research seeks to experimentally capture clear signals of criticality in actual brains. Meanwhile, other research seeks to better understand what benefits may be conferred by criticalty, and has concluded that there are likely many, including
+This repository investigates the potential of Self-Organized Criticality (SOC) as a method to speed learning, in particular in a reinforcement learning context. Criticality is an intriguing property of dynamical systems. When a system is arranged so that its dynamics are poised on the threshold of chaos yet not chaotic, it is said to be *critical*. Particularly within the neuroscience community, there has been much interest in the role of criticality in information processing. Some research seeks to construct toy models that inch towards biological realism, and other research seeks to experimentally capture clear signals of criticality in actual brains. Meanwhile, other research seeks to better understand what benefits may be conferred by criticalty, and has concluded that there are likely many, including
 
 - maximal dynamic range (sensitivity to the largest range of magnitudes of stimuli), 
 - maximal information storage, and
@@ -21,16 +21,16 @@ This penalty is inspired by [1], which studied a toy model of self-organized cri
 - the network dynamics were rolled out for *T* steps
 - the time-average *A<sub>T</sub>(a)* of each activation *a* over the previous *T* steps was calculated
 - The network was rewired to push each activation closer to criticality:
-  - Nodes whose time-average activations exceeded a certain threshold and were frozen *on* (*A<sub>T</sub>(a) > t+ < 1*) were subject to pruning of incoming edges, diminishing their probability of activation.
-  - Nodes whose time-average activations fell below than a certain threshold and were frozen *off* (*A<sub>T</sub>(a) > t+ < 1*) were randomly assigned new incoming edges, increasing their probability of activation.
+  - Nodes whose time-average activations exceeded a certain threshold and were frozen *on* (*A<sub>T</sub>(a) > t<sub>+</sub> < 1*) were subject to pruning of incoming edges, *decreasing* their probability of activation.
+  - Nodes whose time-average activations fell below than a certain threshold and were frozen *off* (*A<sub>T</sub>(a) > t<sub>-</sub> < 1*) were randomly assigned new incoming edges, *increasing* their probability of activation.
   
-Our procedure implements the same concept in a differentiable way. Moreover, we also experiment with penalizing the component-wise time-variance of the hidden state, given that unlike in [1], a hidden state activation may also be frozen at e.g. 1/2, since our activations are continuous-valued instead of Boolean. It is also important to note that 
+Our procedure implements the same concept in a differentiable way. Moreover, we also experiment with penalizing the component-wise time-variance of the hidden state, given that unlike in [1], a hidden state activation may also be frozen at e.g. 1/2, since our activations are continuous-valued instead of Boolean.
 
 ## Experiments
 
 We perform experiments on the `BreakOut` Atari environment of OpenAI's gym.
 
-We also perform experiments with a simple translation model that uses an LSTM to translate between English and French.
+We also perform experiments with this SOC regularization on an LSTM language model. Specifically, we see whether the SOC penalty can help an LSTM learn the Penn Tree Bank corpus more rapidly.
 
 ## Details
 
