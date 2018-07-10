@@ -1,4 +1,12 @@
-# A2C2: A2C + criticality
+# A2C2: Experiments in RL
+
+I am performing some RL experiments using an A2C learning algorithm. In particular, I have modified the implementation of the A2C in OpenAI's collection of baselines. There are two main modifications: 
+
+- Criticality: I am interested in inducing behavior over time that is closer to criticality, i.e. perched between chaos and order.
+- Capsules: Given the nice properties of capsule networks (e.g. good transfer learning), I was interested in exploring how well they would work in an RL setting.
+
+## A2C + Criticality
+A2C + criticality
 
 This repository investigates the potential of Self-Organized Criticality (SOC) as a method to speed learning, in particular in a reinforcement learning context. Criticality is implemented practically by the addition of another loss term:
 
@@ -6,12 +14,16 @@ This repository investigates the potential of Self-Organized Criticality (SOC) a
 
 which penalizes the time-averaged hidden state *s* (element-wise). This penalty encourages the time average of each component of the state to change over the course of the averaging timescale, so that consistently large (near absolute magnitude 1) or small (near zero) time averages are penalized. One perspective on this approach is that it encourages exploration in the space of internal representations. By penalizing frozen components of hidden states, we incentivize models to take fuller advantage of their representational capabilities.
 
-# Capsule Policy
+More information is avaialable in the `readme.md` file of `/criticality`.
+
+## A2C + Capsules
+
+This is a straightforward modification of the Capsule Network architecture implemented in Sabour-Frost-Hinton (2017) to function as an architecture in A2C. There is an encoding layer of capsules which feeds into a baseline value function estimate and also an additional capsule layer where the capsules represent discrete actions in a policy.
+
+More information is available in the `readme.md` file of `/capsules`.
 
 
-
-
-# A2C original
+# A2C original readme
 
 This repository is modified from a version of the A2C algorithm in OpenAI's collection of baselines.
 
