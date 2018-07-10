@@ -22,6 +22,9 @@ This is a straightforward modification of the Capsule Network architecture imple
 
 More information is available in the `readme.md` file of `/capsules`.
 
+## How to use this code
+
+The easiest way to use this code is to first download and install the OpenAI baselines repo from its main branch. Then, you can  insert the folder `a2c2` into the directory of `baselines` alongside `a2c`. To run the code, execute e.g. `python3 -m baselines.a2c2.run_atari --policy=caps`, which will train a Capsule Network policy on an Atari game (BreakOut, by default). To train with self-organized criticality, execute `python3 -m baselines.a2c2.run_atari --policy=lstm`; SOC is implemented by default when you select the lstm policy.
 
 # A2C original readme
 
