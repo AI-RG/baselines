@@ -153,10 +153,11 @@ def conv_to_fc(x):
     
 def conv_to_caps(x):
     shape = x.get_shape().as_list()
-    nh = np.prod([v for v in shape()[1:-1]])
+    nh = np.prod([v for v in shape[1:-1]])
     x = tf.reshape(x, [shape[0], nh, shape[-1]])
+    # x = tf.reshape(x, [-1, nh, shape[-1]])
     return x
-
+    
 def discount_with_dones(rewards, dones, gamma):
     discounted = []
     r = 0
@@ -296,33 +297,38 @@ def q_explained_variance(qpred, q):
     return 1.0 - (varpred / vary)
     
     
-# for capsule policy
+# for capsule policy        
 def _route(x, scope, r=5, reset=True):
     """
     Dynamic routing function.
     Input of shape [B, J, I, K]: batch, ncaps, nincaps, capsdim.
     """
-    shape = x.get_shape().as_list()[:-1]
+    b = x[:, :, :, 0] * 0.0
     with tf.variable_scope(scope):
-        b = tf.get_variable("b", shape, initializer=tf.constant_initializer(0.0))
-        if reset:
-            b = tf.assign(b, tf.fill(shape, 0.0))
         for _ in range(r):
-            c = tf.softmax(b, axis=1)
+            c = tf.nn.softmax(b, axis=1)
             s = tf.einsum('bjik,bji->bjk', x, c)
-            v = _squash(s, axis=2)
+            v = _squash(s, axis=2, inroute=True)
             b += tf.einsum('bjk,bjik->bji', v, x) 
         return v
     
-def _squash(x, axis=3, eps=1e-6):
+def _squash(x, axis=3, eps=1e-6, inroute=False):
     n2 = tf.reduce_sum(tf.square(x), axis=axis)
-    return (x / tf.maximum(tf.sqrt(n2), eps)) * n2 / (1.0 + n2) 
-    
+    # workaround: broadcasting does not allow 'None' dimensions in multiple arguments.
+    # this fix assumes (as is generally necessary) that both None's will be equal when fed.
+    d = x.get_shape().as_list()[-1]
+    if not inroute:
+        n2pad = tf.einsum('bijk,l->bijkl', n2, tf.ones([d], tf.float32))
+    else:
+        n2pad = tf.einsum('bi,j->bij', n2, tf.ones([d], tf.float32))
+    return (x / tf.maximum(tf.sqrt(n2pad), eps)) * n2pad / (1.0 + n2pad)
+ 
 def capsule_conv(x, scope, rf, stride, ncaps, capsdim):
     shape = x.get_shape().as_list()
     with tf.variable_scope(scope):
         out = conv(x, 'c', nf=ncaps*capsdim, rf=rf, stride=stride)
-        out = tf.reshape(out, out.get_shape().as_list()[:-1] + [ncaps, capsdim])
+        newshape = [-1] + out.get_shape().as_list()[1:-1] + [ncaps, capsdim]
+        out = tf.reshape(out, newshape)
         return _squash(out, axis=4) #activation is squashing along capsule-vector dimension
             
 def capsule(x, scope, ncaps, capsdim, init_scale=1.0, from_conv=True):
@@ -334,14 +340,14 @@ def capsule(x, scope, ncaps, capsdim, init_scale=1.0, from_conv=True):
         w = tf.get_variable('w', [ncaps, i, capsdim, k], initializer=ortho_init(init_scale))
         u = tf.einsum('jilk,bik->bjil', w, x)
         return _route(u, 'route')
-        
+                
 # self-organized criticality (SOC) utility
 def soc_loss(s, mp=0.25, mm=0.25, p=1):
     assert mp + mm < 1.0
     if p == 1:
-        loss = tf.nn.relu(tf.abs(s) - 1 + mp)
+        loss = tf.nn.relu(tf.abs(s) - 1.0 + mp)
         loss += tf.nn.relu(mm - tf.abs(s))
     else:
-        loss = tf.pow(tf.nn.relu(tf.abs(s) - 1 + mp), p)
+        loss = tf.pow(tf.nn.relu(tf.abs(s) - 1.0 + mp), p)
         loss += tf.pow(tf.nn.relu(mm - tf.abs(s)), p)
     return tf.reduce_mean(loss, axis=1)

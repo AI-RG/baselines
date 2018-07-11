@@ -1,8 +1,11 @@
 import numpy as np
 import tensorflow as tf
+
 from baselines.a2c2.utils import conv, fc, conv_to_fc, batch_to_seq, seq_to_batch, lstm, lnlstm, capsule_conv, capsule
 from baselines.common.distributions import make_pdtype
 from baselines.common.input import observation_input
+
+from gym import spaces
 
 def nature_cnn(unscaled_images, **conv_kwargs):
     """
@@ -33,13 +36,14 @@ class CapsulePolicy(object):
         X, processed_x = observation_input(ob_space, nbatch)
         M = tf.placeholder(tf.float32, [nbatch]) #mask
         self.pdtype = make_pdtype(ac_space)
-        with tf.variable_scope('model', reuse=reuse):
+        with tf.variable_scope("model", reuse=reuse):
             h = caps_cnn(processed_x)
             h = capsule_conv(h, 'capsconv', 4, 2, 32, 8)
             h = capsule(h, 'caps', 16, 8, from_conv=True)
-            vf = fc(h, 'v', 1)[:, 0] # value function
+            hfc = conv_to_fc(h)
+            vf = fc(hfc, 'v', 1)[:, 0] # value function
             # for discrete action spaces, create a final capsule layer
-            # one capsule for each possible action
+            # with one capsule for each possible action
             if isinstance(ac_space, spaces.Discrete): 
                 p = capsule(h, 'pcaps', ac_space.n, 4, from_conv=False)
                 pnorm = tf.reduce_sum(tf.square(p), axis=2)

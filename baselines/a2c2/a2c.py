@@ -29,7 +29,8 @@ class Model(object):
         ADV = tf.placeholder(tf.float32, [nbatch])
         R = tf.placeholder(tf.float32, [nbatch])
         LR = tf.placeholder(tf.float32, [])
-        S = tf.placeholder(tf.float32, [nbatch, nstates])
+        if nstates is not None:
+            S = tf.placeholder(tf.float32, [nbatch, nstates])
         if policy == LstmPolicy:
             # S = S[:, :nstates//2] # take only c; exlcude h from soc penalty
             # nstates = nstates//2
@@ -65,18 +66,28 @@ class Model(object):
             advs = rewards - values
             for step in range(len(obs)):
                 cur_lr = lr.value()
-            td_map = {train_model.X:obs, A:actions, ADV:advs, R:rewards, LR:cur_lr, S:states}
+            td_map = {train_model.X:obs, A:actions, ADV:advs, R:rewards, LR:cur_lr}
+            if nstates is not None:
+                td_map[S] = states
             if states is not None:
                 # convert to expected input format
                 logged_states = states.reshape([nenv, nsteps, nstates])
-                states = logged_states[:, 0, :]
-                td_map[train_model.S] = states
+                input_states = logged_states[:, 0, :]
+                td_map[train_model.S] = input_states
                 td_map[train_model.M] = masks
-            policy_loss, value_loss, policy_entropy, sc_loss, _ = sess.run(
-                [pg_loss, vf_loss, entropy, sc_loss, _train],
-                td_map
-            )
-            return policy_loss, value_loss, policy_entropy, sc_loss
+            # include soc_loss in fetches if appropriate
+            if sc_coef is not None:    
+                policy_loss, value_loss, policy_entropy, soc_loss, _ = sess.run(
+                    [pg_loss, vf_loss, entropy, sc_loss, _train],
+                    td_map
+                )
+            else:
+                policy_loss, value_loss, policy_entropy, _ = sess.run(
+                    [pg_loss, vf_loss, entropy, _train],
+                    td_map
+                )
+                soc_loss = None
+            return policy_loss, value_loss, policy_entropy, soc_loss
 
         def save(save_path):
             ps = sess.run(params)
@@ -107,7 +118,7 @@ class Runner(AbstractEnvRunner):
         self.gamma = gamma
 
     def run(self):
-        mb_obs, mb_states, mb_rewards, mb_actions, mb_values, mb_dones = [],[],[],[],[], []
+        mb_obs, mb_states, mb_rewards, mb_actions, mb_values, mb_dones = [],[],[],[],[],[]
         for n in range(self.nsteps):
             actions, values, states, _ = self.model.step(self.obs, self.states, self.dones)
             mb_obs.append(np.copy(self.obs))
@@ -126,9 +137,12 @@ class Runner(AbstractEnvRunner):
         mb_dones.append(self.dones)
         #batch of steps to batch of rollouts
         mb_obs = np.asarray(mb_obs, dtype=np.uint8).swapaxes(1, 0).reshape(self.batch_ob_shape)
-        mb_states = np.asarray(mb_states, dtype=np.float32).swapaxes(1, 0)
-        shape = shape(mb_states)
-        mb_states = mb_states.reshape([shape[0]*shape[1], shape[2]])
+        if mb_states[0] is not None: # reshape if states exist
+            mb_states = np.asarray(mb_states, dtype=np.float32).swapaxes(1, 0)
+            shape = shape(mb_states)
+            mb_states = mb_states.reshape([shape[0]*shape[1], shape[2]])
+        else: # if states are None's, return single None instead of list of None's
+            mb_states = None
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32).swapaxes(1, 0)
         mb_actions = np.asarray(mb_actions, dtype=np.int32).swapaxes(1, 0)
         mb_values = np.asarray(mb_values, dtype=np.float32).swapaxes(1, 0)
@@ -175,7 +189,8 @@ def learn(policy, env, seed, nsteps=5, nstates=512, total_timesteps=int(80e6), v
             logger.record_tabular("fps", fps)
             logger.record_tabular("policy_entropy", float(policy_entropy))
             logger.record_tabular("value_loss", float(value_loss))
-            logger.record_tabular("soc_loss", float(sc_loss))
+            if sc_coef is not None:
+                logger.record_tabular("soc_loss", float(sc_loss))
             logger.record_tabular("explained_variance", float(ev))
             logger.dump_tabular()
     env.close()
