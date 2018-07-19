@@ -22,6 +22,10 @@ A schematic of the architecture is shown below:
 
 ## Experiments
 
+The naive architecture suffered from several drawbacks in my first round of experiments. First, the clock speed of training was reduced by about a factor of five from the CNN network. For another, its explained variance hovered around 0.5 even after very long training times. This failure could be due to a poor choice of learning rate.
+
+This motivated attempting experiments without the final capsule policy layer, i.e. learning a policy with a straightforward `num_actions`-units FC layer taking inputs from the top capsule layer. This policy performed substantially better, in fact outperforming CNN by clock time. 
+
 ## Possible extensions
 
 ### Transfer learning
