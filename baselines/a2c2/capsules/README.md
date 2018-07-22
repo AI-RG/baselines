@@ -22,9 +22,13 @@ A schematic of the architecture is shown below:
 
 ## Experiments
 
-The naive architecture suffered from several drawbacks in my first round of experiments. First, the clock speed of training was reduced by about a factor of five from the CNN network. Second, the explained variance hovered around 0.5 even after very long training times. This failure could be due to a poor choice of hyperparameters (e.g. learning rate), which were not modified from original A2C implementation.
+The main drawback of the Capsule Policy as implemented above is that it takes longer to converge to a good value than e.g. a CNN baseline. This is true both in terms of episodes, and wall time, where the CapsNet is approximately 5-6 times slower than a CNN. (This could be a coincidence, but there are 2 routing stages with 3 iterations each.) However, an advantage of the Capsule Policy is that it exhibits less variance in learning. Moreover, unlike the CNN policy, the CapsNet did not demonstrate any unusual dips in explianed variance throughout its policy improvement (as seen in the figure).
 
-This motivated attempting experiments without the final capsule policy layer, i.e. learning a policy with a straightforward `num_actions`-units FC layer taking inputs from the top capsule layer. This policy performed substantially better, in fact outperforming CNN by clock time. 
+The longer training time of our architecture is not unusual. A quick count of parameters indicates that the CNN has roughly one third as many parameters as the CapsNet. Moreover, it seems intuitively plausible that signals require more time to backpropagate through the routing process.
+
+<img src="https://github.com/AI-RG/baselines/blob/master/baselines/a2c2/capsules/ev_caps.png" alt="caps-ev" width="500px"/>
+
+
 
 ## Possible extensions
 
