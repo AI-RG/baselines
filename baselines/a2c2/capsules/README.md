@@ -24,9 +24,9 @@ A schematic of the architecture is shown below:
 
 The main drawback of the Capsule Policy as implemented above is that it takes longer to converge to a good value than e.g. a CNN baseline. This is true both in terms of episodes, and wall time, where the CapsNet is approximately 5-6 times slower than a CNN. (This could be a coincidence, but there are 2 routing stages with 3 iterations each.) However, an advantage of the Capsule Policy is that it exhibits less variance in learning. Moreover, unlike the CNN policy, the CapsNet did not demonstrate any unusual dips in explianed variance throughout its policy improvement (as seen in the figure).
 
-The longer training time of our architecture is not unusual. A quick count of parameters indicates that the CNN has roughly one third as many parameters as the CapsNet. Moreover, it seems intuitively plausible that signals require more time to backpropagate through the routing process.
+The longer training time of our architecture is not unusual. A quick count of parameters indicates that the CapsNet has 7,981,697 parameters in contrast to the 1,680,549 of the CNN. A smaller architecture could have been chosen, but it appears that this excess capacity is still trainable in practice and may facilitate better multi-task learning at the expense of slower initial training.
 
-<img src="https://github.com/AI-RG/baselines/blob/master/baselines/a2c2/capsules/ev_caps.png" alt="caps-ev" width="500px"/>
+<img src="https://github.com/AI-RG/baselines/blob/master/baselines/a2c2/capsules/ev_caps.png" alt="caps-ev" width="650px"/>
 
 
 
