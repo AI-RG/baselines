@@ -18,11 +18,14 @@ from baselines.a2c2.policies import LstmPolicy
 
 class Model(object):
 
+    # TODO
+    # DEBUG
+    # Experiment with different learning rates
     def __init__(self, policy, ob_space, ac_space, nenvs, nsteps, nstates=None,
             ent_coef=0.01, vf_coef=0.5, sc_coef=0.1, max_grad_norm=0.5, lr=7e-4,
             alpha=0.99, epsilon=1e-5, total_timesteps=int(80e6), lrschedule='linear'):
 
-        sess = tf_util.make_session()
+        sess = tf_util.make_session() #add log_devices=True argument for logging
         nbatch = nenvs*nsteps
 
         A = tf.placeholder(tf.int32, [nbatch])
@@ -61,8 +64,17 @@ class Model(object):
         _train = trainer.apply_gradients(grads)
 
         lr = Scheduler(v=lr, nvalues=total_timesteps, schedule=lrschedule)
+        
+        # tensorboard logging
+        summ = tf.summary.merge_all()
+        summary_writer = tf.summary.FileWriter('/tmp/openai/tensorboard')
+        summary_writer.add_graph(sess.graph)
+        
+        # TODO
+        # DEBUG
+        # Added optional arguments log, i to train
 
-        def train(obs, states, rewards, masks, actions, values):
+        def train(obs, states, rewards, masks, actions, values, log=False, i=None):
             advs = rewards - values
             for step in range(len(obs)):
                 cur_lr = lr.value()
@@ -77,18 +89,25 @@ class Model(object):
                 td_map[train_model.M] = masks
             # include soc_loss in fetches if appropriate
             if sc_coef is not None:    
-                policy_loss, value_loss, policy_entropy, soc_loss, _ = sess.run(
-                    [pg_loss, vf_loss, entropy, sc_loss, _train],
+                policy_loss, value_loss, policy_entropy, soc_loss, _, s = sess.run(
+                    [pg_loss, vf_loss, entropy, sc_loss, _train, summ],
                     td_map
                 )
+            # TODO
+            # DEBUG
+            # Added grads for debugging
+            # Add summ for debugging
             else:
-                policy_loss, value_loss, policy_entropy, _ = sess.run(
-                    [pg_loss, vf_loss, entropy, _train],
+                policy_loss, value_loss, policy_entropy, _, s = sess.run(
+                    [pg_loss, vf_loss, entropy, _train, summ],
                     td_map
                 )
                 soc_loss = None
+            if log:
+                assert i is not None
+                summary_writer.add_summary(s, i)
             return policy_loss, value_loss, policy_entropy, soc_loss
-
+            
         def save(save_path):
             ps = sess.run(params)
             make_path(osp.dirname(save_path))
@@ -165,7 +184,18 @@ class Runner(AbstractEnvRunner):
         mb_masks = mb_masks.flatten()
         return mb_obs, mb_states, mb_rewards, mb_masks, mb_actions, mb_values
 
-def learn(policy, env, seed, nsteps=5, nstates=512, total_timesteps=int(80e6), vf_coef=0.5, ent_coef=0.01, sc_coef=0.1, max_grad_norm=0.5, lr=7e-4, lrschedule='linear', epsilon=1e-5, alpha=0.99, gamma=0.99, log_interval=100):
+# TODO
+# DEBUGGING: REVERT AFTER DEBUGGING
+# changed lr to higher:
+### LR FROM: 7e-4
+### LR TO: 5e-3
+def learn(policy, env, seed, nsteps=5, nstates=512, 
+# changed to 200 during debugging
+# total_timesteps=int(80e6),
+total_timesteps=int(80e6), vf_coef=0.5, ent_coef=0.01, sc_coef=0.1, max_grad_norm=0.5, lr=5e-3, lrschedule='linear', epsilon=1e-5, alpha=0.99, gamma=0.99,
+# set log_interval to 2 for debugging
+# set log_interval to 100 for run
+log_interval=100):
     set_global_seeds(seed)
 
     nenvs = env.num_envs
@@ -177,9 +207,15 @@ def learn(policy, env, seed, nsteps=5, nstates=512, total_timesteps=int(80e6), v
 
     nbatch = nenvs*nsteps
     tstart = time.time()
+    # simple logging
+    timesteps = []
+    evs = []
     for update in range(1, total_timesteps//nbatch+1):
         obs, states, rewards, masks, actions, values = runner.run()
-        policy_loss, value_loss, policy_entropy, sc_loss = model.train(obs, states, rewards, masks, actions, values)
+        if update % log_interval == 0 or update == 1:
+            policy_loss, value_loss, policy_entropy, sc_loss = model.train(obs, states, rewards, masks, actions, values, log=True, i=update)
+        else:
+            policy_loss, value_loss, policy_entropy, sc_loss = model.train(obs, states, rewards, masks, actions, values)
         nseconds = time.time()-tstart
         fps = int((update*nbatch)/nseconds)
         if update % log_interval == 0 or update == 1:
@@ -189,9 +225,24 @@ def learn(policy, env, seed, nsteps=5, nstates=512, total_timesteps=int(80e6), v
             logger.record_tabular("fps", fps)
             logger.record_tabular("policy_entropy", float(policy_entropy))
             logger.record_tabular("value_loss", float(value_loss))
-            if sc_coef is not None:
+            if sc_coef is not None and sc_coef != 0.0:
                 logger.record_tabular("soc_loss", float(sc_loss))
             logger.record_tabular("explained_variance", float(ev))
             logger.dump_tabular()
+            # light logging
+            timesteps.append(update*nbatch)
+            evs.append(float(ev))    
+      
     env.close()
+    
+    # simple logging
+    logfile = open('log_timesteps.txt', 'w')
+    for t in timesteps:
+      logfile.write("%s\n" % t)
+    logfile.close()
+    logfile2 = open('log_explained_variance.txt', 'w')
+    for ev in evs:
+      logfile2.write("%s\n" % ev)
+    logfile2.close()
+    
     return model

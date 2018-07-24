@@ -17,17 +17,26 @@ def train(env_id, num_timesteps, seed, policy, lrschedule, num_env):
         nstates = 512
     elif policy == 'caps':
         policy_fn = CapsulePolicy
+        
+    # TODO
+    # DEBUG:
+    # Changed ent_coef to zero
+    # To undo, simply omit ent_coef from arguments (use default)
     env = VecFrameStack(make_atari_env(env_id, num_env, seed), 4)
-    learn(policy_fn, env, seed, nsteps=5, nstates=nstates, total_timesteps=int(num_timesteps * 1.1),  sc_coef=None, lrschedule=lrschedule)
+    learn(policy_fn, env, seed, nsteps=5, nstates=nstates, total_timesteps=int(num_timesteps * 1.1), sc_coef=None, lrschedule=lrschedule)
     env.close()
 
+# num_env = 16 originally
+# num_env changed for personal experiments
 def main():
     parser = atari_arg_parser()
     parser.add_argument('--policy', help='Policy architecture', choices=['cnn', 'lstm', 'lnlstm', 'caps'], default='cnn')
     parser.add_argument('--lrschedule', help='Learning rate schedule', choices=['constant', 'linear'], default='constant')
     args = parser.parse_args()
     logger.configure()
-    train(args.env, num_timesteps=args.num_timesteps, seed=args.seed,
+    run_timesteps = int(args.num_timesteps)
+    debug_timesteps = int(1e4)
+    train(args.env, num_timesteps=run_timesteps, seed=args.seed,
         policy=args.policy, lrschedule=args.lrschedule, num_env=16)
 
 if __name__ == '__main__':
