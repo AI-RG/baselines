@@ -48,7 +48,7 @@ Experiments in this direction are ongoing.
 
 ### How to run this code
 
-The command `python3 -m baselines.a2c2.run_atari --policy=CapsulePolicy` runs the algorithm for 40M frames = 10M timesteps, with additional command line options available; for a listing, use help (`-h`).
+The command `python3 -m baselines.a2c2.run_atari --policy=caps` runs the algorithm for 40M frames = 10M timesteps, with additional command line options available; for a listing, use help (`-h`).
 
 By default, the algorithm runs on the Atari game Breakout (gym environment `BreakoutNoFrameSkip-v4`), with four consecutive stacked frames of (grayscale) pixels as input. Moreover, 16 different environments are run in parallel for 5 time steps each before synchronously updating the network's parameters. This default behavior has not been modified from OpenAI's original implementation.
 
