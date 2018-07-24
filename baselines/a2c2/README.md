@@ -5,6 +5,8 @@ I am performing some RL experiments using an A2C learning algorithm. In particul
 - Criticality: I am interested in inducing behavior over time that is closer to criticality, i.e. perched between chaos and order.
 - Capsules: Given the nice properties of capsule networks (e.g. good transfer learning), I was interested in exploring how well they would work in an RL setting.
 
+*Caveat*: This code is a work in progress. I will continue to make (possibly large) changes for at least the next month. Use at your own risk!
+
 ## A2C + Criticality
 A2C + criticality
 
